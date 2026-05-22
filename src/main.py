@@ -175,21 +175,36 @@ class LogAnalyzerApp(App):
 
 
 import sys
+import yaml
+
+def load_config(path="config.yaml"):
+    try:
+        with open(path, 'r') as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        print(f"Warning: Could not load config file: {e}")
+        return {}
 
 if __name__ == "__main__":
     if "--web" in sys.argv:
         try:
             from src.web_ui import run_web_ui
-            # Default to port 8000, optionally allow --port 8080
-            port = 8000
+            
+            config = load_config()
+            web_config = config.get("web", {})
+            
+            # Default to config file, but allow command line override
+            port = web_config.get("port", 8000)
+            host = web_config.get("host", "127.0.0.1")
+            
             if "--port" in sys.argv:
                 try:
                     port_idx = sys.argv.index("--port")
                     port = int(sys.argv[port_idx + 1])
                 except (ValueError, IndexError):
-                    print("Invalid port specified. Defaulting to 8000.")
+                    print(f"Invalid port specified in arguments. Defaulting to {port}.")
             
-            run_web_ui(port=port)
+            run_web_ui(host=host, port=port)
         except ImportError as e:
             print(f"Error loading Web UI: {e}")
             print("Please ensure you have installed the required web dependencies (fastapi, uvicorn, jinja2, python-multipart).")

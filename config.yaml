@@ -1,41 +1,74 @@
 # Configuration for Log Searcher and AI Analyzer
 
+# ==========================================
 # AI Provider Settings
-# We use litellm under the hood, which supports many providers.
-# Choose your preferred provider and set the appropriate configurations below.
-# Supported formats include: 
-# - openai/gpt-4
-# - anthropic/claude-3-opus
-# - ollama/llama3
-# - openrouter/auto
+# ==========================================
+# We use `litellm` under the hood, which supports almost any AI provider.
+# Below are examples for various providers. Uncomment the ONE you want to use.
+
 ai:
-  # The model to use. Examples:
-  # - "ollama/llama3" (for local Ollama)
-  # - "gpt-4o" (for OpenAI)
-  # - "claude-3-5-sonnet-20240620" (for Anthropic)
-  # - "openrouter/auto" (for OpenRouter)
+  # ----------------------------------------
+  # 1. Local: Ollama (DEFAULT)
+  # ----------------------------------------
   model: "ollama/llama3"
-
-  # Base URL for the API (if applicable).
-  # For Ollama, it's typically http://localhost:11434
-  # For LM-Studio, it might be http://localhost:1234/v1
   api_base: "http://localhost:11434"
-
-  # API Key. For local models, this is often not needed, but can be set to anything.
-  # For OpenAI, Anthropic, or OpenRouter, provide your key here or use an environment variable (e.g., OPENAI_API_KEY).
-  api_key: ""
+  api_key: "" # Not required for Ollama
   
-  # Generation parameters
+  # ----------------------------------------
+  # 2. Local: LM-Studio / LocalAI
+  # ----------------------------------------
+  # model: "openai/local-model" # Use the 'openai/' prefix for generic OpenAI-compatible local servers
+  # api_base: "http://localhost:1234/v1" # Standard port for LM-Studio
+  # api_key: "sk-local" # Usually any string works
+  
+  # ----------------------------------------
+  # 3. Cloud: OpenRouter
+  # ----------------------------------------
+  # model: "openrouter/anthropic/claude-3.5-sonnet"
+  # api_base: "" # Leave empty, litellm knows the OpenRouter URL
+  # api_key: "sk-or-v1-..." # Put your OpenRouter key here
+  
+  # ----------------------------------------
+  # 4. Cloud: OpenAI
+  # ----------------------------------------
+  # model: "gpt-4o"
+  # api_base: ""
+  # api_key: "sk-..." # Or set the OPENAI_API_KEY environment variable
+  
+  # ----------------------------------------
+  # 5. Cloud: Anthropic
+  # ----------------------------------------
+  # model: "claude-3-5-sonnet-20240620"
+  # api_base: ""
+  # api_key: "sk-ant-..." # Or set the ANTHROPIC_API_KEY environment variable
+
+  # --- Generation parameters ---
   temperature: 0.2
   max_tokens: 4096
 
+
+# ==========================================
 # Log Search Settings
+# ==========================================
 search:
   # Default chunk size for reading large files (in bytes)
-  # 1048576 = 1MB
+  # 1048576 = 1MB. Adjust this based on your RAM capabilities.
   chunk_size_bytes: 1048576
 
-# TUI Settings
+
+# ==========================================
+# Web UI Settings
+# ==========================================
+web:
+  # The host to bind to. Use "127.0.0.1" for local-only, or "0.0.0.0" to expose on your network.
+  host: "127.0.0.1"
+  # The port the Web UI will run on.
+  port: 8000
+
+
+# ==========================================
+# Terminal UI Settings
+# ==========================================
 tui:
   # TUI Theme setting
   theme: "textual-dark"

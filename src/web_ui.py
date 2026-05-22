@@ -32,7 +32,7 @@ class SearchRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
@@ -79,6 +79,6 @@ async def get_directory(path: str = "./"):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-def run_web_ui(port=8000):
-    print(f"Starting Web UI on http://localhost:{port}")
-    uvicorn.run(app, host="127.0.0.1", port=port)
+def run_web_ui(host="127.0.0.1", port=8000):
+    print(f"Starting Web UI on http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)
