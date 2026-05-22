@@ -1,0 +1,41 @@
+# Configuration for Log Searcher and AI Analyzer
+
+# AI Provider Settings
+# We use litellm under the hood, which supports many providers.
+# Choose your preferred provider and set the appropriate configurations below.
+# Supported formats include: 
+# - openai/gpt-4
+# - anthropic/claude-3-opus
+# - ollama/llama3
+# - openrouter/auto
+ai:
+  # The model to use. Examples:
+  # - "ollama/llama3" (for local Ollama)
+  # - "gpt-4o" (for OpenAI)
+  # - "claude-3-5-sonnet-20240620" (for Anthropic)
+  # - "openrouter/auto" (for OpenRouter)
+  model: "ollama/llama3"
+
+  # Base URL for the API (if applicable).
+  # For Ollama, it's typically http://localhost:11434
+  # For LM-Studio, it might be http://localhost:1234/v1
+  api_base: "http://localhost:11434"
+
+  # API Key. For local models, this is often not needed, but can be set to anything.
+  # For OpenAI, Anthropic, or OpenRouter, provide your key here or use an environment variable (e.g., OPENAI_API_KEY).
+  api_key: ""
+  
+  # Generation parameters
+  temperature: 0.2
+  max_tokens: 4096
+
+# Log Search Settings
+search:
+  # Default chunk size for reading large files (in bytes)
+  # 1048576 = 1MB
+  chunk_size_bytes: 1048576
+
+# TUI Settings
+tui:
+  # TUI Theme setting
+  theme: "textual-dark"
