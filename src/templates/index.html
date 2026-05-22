@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Searcher & AI Analyzer</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --panel-bg: #2d2d2d;
+            --text-color: #d4d4d4;
+            --border-color: #404040;
+            --accent-color: #0e639c;
+            --accent-hover: #1177bb;
+            --user-msg: #2b5d38;
+            --ai-msg: #3c3c3c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 250px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 10px;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border-color);
+            background: #252526;
+        }
+
+        #directory-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .dir-item {
+            cursor: pointer;
+            padding: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dir-item:hover {
+            background-color: #37373d;
+        }
+        .icon {
+            margin-right: 5px;
+        }
+
+        /* Main Area */
+        #main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background-color: #2d2d2d;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-right: 1px solid var(--border-color);
+            background-color: #2d2d2d;
+        }
+
+        .tab.active {
+            background-color: var(--bg-color);
+            border-top: 2px solid var(--accent-color);
+            border-bottom: 1px solid var(--bg-color);
+            margin-bottom: -1px;
+        }
+
+        /* Content Panes */
+        .pane {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .pane.active {
+            display: flex;
+        }
+
+        /* AI Chat Pane */
+        #chat-history {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            background-color: var(--panel-bg);
+            border-radius: 4px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .message.user { background-color: var(--user-msg); }
+        .message.ai { background-color: var(--ai-msg); }
+        
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Core Search Pane */
+        .search-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        #search-results {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            background-color: var(--panel-bg);
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre;
+        }
+        
+        .search-line {
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Inputs & Buttons */
+        input[type="text"] {
+            flex: 1;
+            padding: 8px 12px;
+            background-color: #3c3c3c;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent-color);
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="sidebar-header">Explorer</div>
+        <div id="directory-tree">
+            <!-- Populated via JS -->
+        </div>
+    </div>
+
+    <!-- Main Area -->
+    <div id="main-area">
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('chat')">AI Investigation</div>
+            <div class="tab" onclick="switchTab('search')">Core Search</div>
+        </div>
+
+        <!-- AI Chat Pane -->
+        <div id="pane-chat" class="pane active">
+            <div id="chat-history">
+                <div class="message ai">AI Investigator initialized. How can I help you?</div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Ask the AI to investigate a folder or log file..." onkeypress="handleChatKeyPress(event)">
+                <button id="chat-send-btn" onclick="sendChatMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- Core Search Pane -->
+        <div id="pane-search" class="pane">
+            <div class="search-controls">
+                <input type="text" id="search-filepath" placeholder="Filepath (e.g. ./logs/app.log)">
+                <input type="text" id="search-keyword" placeholder="Keyword (optional)">
+                <input type="text" id="search-regex" placeholder="Regex (optional)">
+                <button id="search-btn" onclick="runSearch()">Search</button>
+            </div>
+            <div id="search-results">
+                Search results will appear here.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`pane-${tabId}`).classList.add('active');
+        }
+
+        // Directory Tree
+        async function loadDirectory(path = "./") {
+            const tree = document.getElementById('directory-tree');
+            tree.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch(`/api/directory?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    tree.innerHTML = `<div style="color: red;">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                let html = `<div style="margin-bottom: 10px; font-weight: bold;">${data.current_path}</div>`;
+                
+                if (path !== "./" && path !== "." && path !== "/") {
+                    // Primitive 'up one level' for simplicity
+                    const parentPath = path.substring(0, path.lastIndexOf('/')) || "./";
+                    html += `<div class="dir-item" onclick="loadDirectory('${parentPath}')"><span class="icon">📁</span>..</div>`;
+                }
+
+                data.items.forEach(item => {
+                    const icon = item.is_dir ? "📁" : "📄";
+                    const clickAction = item.is_dir 
+                        ? `onclick="loadDirectory('${item.path}')"` 
+                        : `onclick="selectFileForSearch('${item.path}')"`;
+                    
+                    html += `<div class="dir-item" ${clickAction} title="${item.path}">
+                                <span class="icon">${icon}</span>${item.name}
+                             </div>`;
+                });
+                
+                tree.innerHTML = html;
+            } catch (e) {
+                tree.innerHTML = `<div style="color: red;">Error: ${e.message}</div>`;
+            }
+        }
+
+        function selectFileForSearch(filepath) {
+            document.getElementById('search-filepath').value = filepath;
+            // Optionally flash the input or switch tab
+        }
+
+        // AI Chat
+        function handleChatKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const btn = document.getElementById('chat-send-btn');
+            const history = document.getElementById('chat-history');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Add user message
+            input.value = '';
+            input.disabled = true;
+            btn.disabled = true;
+            
+            history.innerHTML += `<div class="message user"><b>You:</b> ${message}</div>`;
+            
+            const loadingId = "loading-" + Date.now();
+            history.innerHTML += `<div id="${loadingId}" class="message ai" style="opacity: 0.7;">AI is investigating...</div>`;
+            history.scrollTop = history.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+                
+                if (data.error) {
+                    history.innerHTML += `<div class="message ai" style="color: #ff5555;"><b>Error:</b> ${data.error}</div>`;
+                } else {
+                    history.innerHTML += `<div class="message ai"><b>AI:</b> ${data.response}</div>`;
+                }
+            } catch (e) {
+                document.getElementById(loadingId).remove();
+                history.innerHTML += `<div class="message ai" style="color: #ff5555;"><b>Error:</b> ${e.message}</div>`;
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                input.focus();
+                history.scrollTop = history.scrollHeight;
+            }
+        }
+
+        // Core Search
+        async function runSearch() {
+            const filepath = document.getElementById('search-filepath').value.trim();
+            const keyword = document.getElementById('search-keyword').value.trim();
+            const regex = document.getElementById('search-regex').value.trim();
+            const resultsDiv = document.getElementById('search-results');
+            const btn = document.getElementById('search-btn');
+
+            if (!filepath) {
+                resultsDiv.innerHTML = '<span style="color: #ff5555;">Please provide a filepath.</span>';
+                return;
+            }
+
+            resultsDiv.innerHTML = 'Searching...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filepath, keyword, regex })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<span style="color: #ff5555;">Error: ${data.error}</span>`;
+                } else if (!data.results || data.results.length === 0) {
+                    resultsDiv.innerHTML = 'No matches found.';
+                } else {
+                    let html = '';
+                    data.results.forEach(r => {
+                        if (r.error || r.info) {
+                            html += `<div class="search-line" style="color: #ffaa00;">${r.error || r.info}</div>`;
+                        } else {
+                            html += `<div class="search-line"><span style="color: #888;">Line ${r.line_num}:</span> ${escapeHtml(r.content)}</div>`;
+                        }
+                    });
+                    resultsDiv.innerHTML = html;
+                }
+            } catch (e) {
+                resultsDiv.innerHTML = `<span style="color: #ff5555;">Error: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // Initialize
+        loadDirectory();
+    </script>
+</body>
+</html>

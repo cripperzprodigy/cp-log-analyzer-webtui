@@ -174,6 +174,25 @@ class LogAnalyzerApp(App):
              results_widget.update(f"Error during search: {str(e)}")
 
 
+import sys
+
 if __name__ == "__main__":
-    app = LogAnalyzerApp()
-    app.run()
+    if "--web" in sys.argv:
+        try:
+            from src.web_ui import run_web_ui
+            # Default to port 8000, optionally allow --port 8080
+            port = 8000
+            if "--port" in sys.argv:
+                try:
+                    port_idx = sys.argv.index("--port")
+                    port = int(sys.argv[port_idx + 1])
+                except (ValueError, IndexError):
+                    print("Invalid port specified. Defaulting to 8000.")
+            
+            run_web_ui(port=port)
+        except ImportError as e:
+            print(f"Error loading Web UI: {e}")
+            print("Please ensure you have installed the required web dependencies (fastapi, uvicorn, jinja2, python-multipart).")
+    else:
+        app = LogAnalyzerApp()
+        app.run()

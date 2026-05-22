@@ -29,5 +29,11 @@ pip install -q --upgrade pip
 pip install -q -r requirements.txt
 
 # Run the application
-echo "Starting application..."
-python src/main.py
+# To start the Web UI instead of the TUI, run: ./start.sh --web
+if [ "$1" == "--web" ]; then
+    echo "Starting Web UI..."
+    python src/main.py --web
+else
+    echo "Starting TUI application..."
+    python src/main.py
+fi

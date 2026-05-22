@@ -26,6 +26,12 @@ python -m pip install -q --upgrade pip
 pip install -q -r requirements.txt
 
 REM Run the application
-echo Starting application...
-python src\main.py
+REM To start the Web UI instead of the TUI, run: start.bat --web
+if "%1"=="--web" (
+    echo Starting Web UI...
+    python src\main.py --web
+) else (
+    echo Starting TUI application...
+    python src\main.py
+)
 pause
