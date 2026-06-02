@@ -1,0 +1,29 @@
+# Project History & Development Thinking Process
+
+This document logs the historical context, major decisions, and thinking process behind the initial build of this tool. Future AI agents should read this to understand *why* certain decisions were made, so they do not inadvertently revert or violate the core design philosophy.
+
+## Initial Requirements & Vision
+The user requested a portable, cross-platform log searcher and analyzer tool with an AI chat interface. The key constraints were:
+1. Portable across Linux and Windows.
+2. An advanced Terminal UI (TUI) as the primary interface.
+3. Support for local AI (Ollama) and cloud APIs (OpenRouter, OpenAI).
+
+## Phase 1: The Core TUI & AI Engine
+*   **Thinking:** To build an advanced TUI with panels and mouse support in Python, `Textual` is the absolute best framework available.
+*   **Thinking:** For universal AI provider support, `litellm` was chosen because it handles the API translation layer, meaning we only have to write the OpenAI-spec function-calling logic once, and it works for Anthropic, Ollama, and OpenRouter seamlessly.
+*   **Decision:** The `config.yaml` was created. We intentionally disabled a default AI model later on to force the user to proactively choose their provider, preventing crashes or hangs if they didn't have Ollama running locally.
+
+## Phase 2: The Web UI Pivot
+*   **Requirement Change:** The user asked if a Web UI could be added locally, but it had to stay lean and Python-based.
+*   **Thinking:** Typical Web UIs use React/Vue (Node.js). That would violate the "lean Python portable" constraint. 
+*   **Decision:** I chose `FastAPI` + `Jinja2` with a single vanilla HTML/JS/CSS file (`src/templates/index.html`). This allows the app to serve a beautiful, modern Web UI without *any* build steps or NPM dependencies.
+*   **Result:** The CLI scripts (`start.sh`, `start.bat`) were modified to accept a `--web` flag, allowing users to toggle between the TUI and Web UI easily.
+
+## Phase 3: Remote Network Drives (SMB/SFTP)
+*   **Requirement Change:** The user wanted the ability to mount shared drives for log processing.
+*   **Thinking:** True OS-level mounting (`mount -t cifs`) requires root/Admin privileges, which destroys portability. 
+*   **Decision:** I implemented a Virtual File System (`vfs.py`) abstraction layer. Using `paramiko` (SFTP) and `smbprotocol` (SMB), the app can stream file chunks directly over the network without mounting it to the OS. The `LogSearcher` was refactored to read exclusively from the VFS.
+
+## Phase 4: Smart Search
+*   **Requirement Change:** The user wanted a friendlier way to search, hiding raw regex complexity but keeping it powerful.
+*   **Decision:** Replaced distinct `keyword` and `regex` inputs with a single `query` input and a `search_type` toggle. The "Smart Search" mode was written to automatically escape inputs, make them case-insensitive, and translate `*` into valid regex `.*` wildcards.
