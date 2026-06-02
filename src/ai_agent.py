@@ -10,10 +10,10 @@ class AIAgent:
         self.log_searcher = LogSearcher(chunk_size=self.config.get('search', {}).get('chunk_size_bytes', 1048576))
         
         # Configure litellm based on our settings
-        self.model = self.config['ai']['model']
-        self.api_base = self.config['ai'].get('api_base')
-        self.api_key = self.config['ai'].get('api_key')
-        self.temperature = self.config['ai'].get('temperature', 0.2)
+        self.model = self.config.get('ai', {}).get('model', "")
+        self.api_base = self.config.get('ai', {}).get('api_base')
+        self.api_key = self.config.get('ai', {}).get('api_key')
+        self.temperature = self.config.get('ai', {}).get('temperature', 0.2)
         
         # Define the tools available to the AI
         self.tools = [
@@ -133,6 +133,9 @@ class AIAgent:
         """
         Sends messages to the AI and handles tool calls in a loop until a final answer is produced.
         """
+        if not self.model:
+            return "⚠️ **Configuration Required**\n\nNo AI model is currently configured. Please open `config.yaml` and uncomment or define your preferred AI provider (e.g., Ollama, OpenAI, Anthropic, OpenRouter) to enable the AI Investigator.", messages
+
         if not messages:
             messages = [{"role": "system", "content": self.system_prompt}]
             

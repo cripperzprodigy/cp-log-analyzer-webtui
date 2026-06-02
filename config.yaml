@@ -8,11 +8,19 @@
 
 ai:
   # ----------------------------------------
-  # 1. Local: Ollama (DEFAULT)
+  # By default, NO AI is configured.
+  # You MUST uncomment and configure ONE of the providers below.
   # ----------------------------------------
-  model: "ollama/llama3"
-  api_base: "http://localhost:11434"
-  api_key: "" # Not required for Ollama
+  model: ""
+  api_base: ""
+  api_key: ""
+  
+  # ----------------------------------------
+  # 1. Local: Ollama
+  # ----------------------------------------
+  # model: "ollama/llama3"
+  # api_base: "http://localhost:11434"
+  # api_key: "" # Not required for Ollama
   
   # ----------------------------------------
   # 2. Local: LM-Studio / LocalAI
