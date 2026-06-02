@@ -57,19 +57,63 @@
             align-items: center;
         }
 
-        .refresh-btn {
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
             background: none;
             border: none;
             color: var(--text-color);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             opacity: 0.7;
             transition: opacity 0.2s;
+            padding: 0;
         }
         
-        .refresh-btn:hover {
+        .icon-btn:hover {
             opacity: 1;
             color: var(--accent-color);
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal {
+            background: var(--panel-bg);
+            padding: 25px;
+            border-radius: 12px;
+            width: 400px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .modal h3 { margin-top: 0; }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block; margin-bottom: 5px; font-size: 13px; color: #94a3b8;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            background-color: #11131d;
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 4px;
         }
 
         #directory-tree {
@@ -377,14 +421,66 @@
 </head>
 <body>
 
+    <!-- Modal for adding virtual drive -->
+    <div id="mount-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Add Network Drive</h3>
+            <div class="form-group">
+                <label>Connection Name (ID)</label>
+                <input type="text" id="mount-id" placeholder="e.g. prod_logs">
+            </div>
+            <div class="form-group">
+                <label>Protocol</label>
+                <select id="mount-protocol" onchange="toggleMountFields()">
+                    <option value="smb">SMB (Windows Share)</option>
+                    <option value="sftp">SFTP (SSH)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Host / IP</label>
+                <input type="text" id="mount-host" placeholder="192.168.1.100">
+            </div>
+            <div class="form-group" id="group-share" style="display: block;">
+                <label>Share Name</label>
+                <input type="text" id="mount-share" placeholder="logs">
+            </div>
+            <div class="form-group" id="group-port" style="display: none;">
+                <label>Port</label>
+                <input type="number" id="mount-port" placeholder="22">
+            </div>
+            <div class="form-group">
+                <label>Username (Optional for Guest SMB)</label>
+                <input type="text" id="mount-user" placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label>Password (Optional)</label>
+                <input type="password" id="mount-pass" placeholder="***">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button onclick="closeMountModal()" style="background: #334155;">Cancel</button>
+                <button onclick="addMount()">Add Drive</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <div id="sidebar">
         <div class="sidebar-header">
             <span>Explorer</span>
-            <button class="refresh-btn" onclick="loadDirectory(currentDirPath)" title="Refresh Directory">↻</button>
+            <div class="action-btns">
+                <button class="icon-btn" onclick="openMountModal()" title="Add Network Drive">🌐</button>
+                <button class="icon-btn" onclick="loadDirectory(currentDirPath)" title="Refresh Directory">↻</button>
+            </div>
         </div>
         <div id="directory-tree">
             <!-- Populated via JS -->
+        </div>
+        
+        <div style="padding: 10px; border-top: 1px solid var(--border-color);">
+            <div style="font-size: 12px; color: #8b949e; margin-bottom: 8px; font-weight: bold;">Network Drives</div>
+            <div id="vfs-list">
+                <!-- VFS links go here -->
+            </div>
         </div>
     </div>
 
@@ -647,8 +743,85 @@
                  .replace(/'/g, "&#039;");
         }
 
+        // Mount logic
+        function openMountModal() {
+            document.getElementById('mount-modal').style.display = 'flex';
+        }
+        function closeMountModal() {
+            document.getElementById('mount-modal').style.display = 'none';
+        }
+        function toggleMountFields() {
+            const proto = document.getElementById('mount-protocol').value;
+            if(proto === 'sftp') {
+                document.getElementById('group-share').style.display = 'none';
+                document.getElementById('group-port').style.display = 'block';
+            } else {
+                document.getElementById('group-share').style.display = 'block';
+                document.getElementById('group-port').style.display = 'none';
+            }
+        }
+        
+        async function addMount() {
+            const id = document.getElementById('mount-id').value.trim();
+            const proto = document.getElementById('mount-protocol').value;
+            const host = document.getElementById('mount-host').value.trim();
+            const share = document.getElementById('mount-share').value.trim();
+            const port = document.getElementById('mount-port').value.trim();
+            const user = document.getElementById('mount-user').value.trim();
+            const pass = document.getElementById('mount-pass').value;
+            
+            if(!id || !host) return alert("ID and Host are required.");
+            if(proto === 'smb' && !share) return alert("Share name is required for SMB.");
+            
+            const payload = {
+                id: id,
+                protocol: proto,
+                host: host,
+                username: user || null,
+                password: pass || null,
+                share_name: proto === 'smb' ? share : null,
+                port: proto === 'sftp' && port ? parseInt(port) : null
+            };
+            
+            try {
+                const response = await fetch('/api/vfs/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if(data.error) alert(data.error);
+                else {
+                    closeMountModal();
+                    loadVfsList();
+                    loadDirectory(`vfs://${id}`);
+                }
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+        
+        async function loadVfsList() {
+            const response = await fetch('/api/vfs/list');
+            const data = await response.json();
+            const listDiv = document.getElementById('vfs-list');
+            
+            if(data.connections && data.connections.length > 0) {
+                let html = '';
+                data.connections.forEach(id => {
+                    html += `<div class="dir-item" onclick="loadDirectory('vfs://${id}')">
+                                <span class="icon">🌐</span>${id}
+                             </div>`;
+                });
+                listDiv.innerHTML = html;
+            } else {
+                listDiv.innerHTML = '<div style="color: #666; font-size: 13px;">No drives mapped</div>';
+            }
+        }
+
         // Initialize
         loadDirectory();
+        loadVfsList();
         
         // Focus chat on load
         document.getElementById('chat-input').focus();
