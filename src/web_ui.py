@@ -27,8 +27,8 @@ class ChatRequest(BaseModel):
 
 class SearchRequest(BaseModel):
     filepath: str
-    keyword: Optional[str] = None
-    regex: Optional[str] = None
+    query: Optional[str] = None
+    search_type: str = "smart"
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -53,8 +53,8 @@ async def search_endpoint(request: SearchRequest):
     try:
         results = await log_searcher.search_file(
             request.filepath, 
-            keyword=request.keyword, 
-            regex=request.regex
+            query=request.query, 
+            search_type=request.search_type
         )
         return {"results": results}
     except Exception as e:

@@ -63,7 +63,7 @@ class AIAgent:
                 "type": "function",
                 "function": {
                     "name": "search_logs",
-                    "description": "Searches a specific file for a keyword or regex pattern.",
+                    "description": "Searches a specific file using a search query.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -71,16 +71,16 @@ class AIAgent:
                                 "type": "string",
                                 "description": "The file to search."
                             },
-                            "keyword": {
+                            "query": {
                                 "type": "string",
-                                "description": "The exact keyword to search for (optional)."
+                                "description": "The search query."
                             },
-                            "regex": {
+                            "search_type": {
                                 "type": "string",
-                                "description": "The regex pattern to search for (optional)."
+                                "description": "One of: 'smart' (default, case-insensitive, allows *), 'keyword' (exact match), 'regex' (raw regex)."
                             }
                         },
-                        "required": ["filepath"]
+                        "required": ["filepath", "query"]
                     }
                 }
             }
@@ -120,8 +120,8 @@ class AIAgent:
             elif name == "search_logs":
                 result = await self.log_searcher.search_file(
                     args.get("filepath"),
-                    keyword=args.get("keyword"),
-                    regex=args.get("regex")
+                    query=args.get("query"),
+                    search_type=args.get("search_type", "smart")
                 )
                 return json.dumps(result)
             else:

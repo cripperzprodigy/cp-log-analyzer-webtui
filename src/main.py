@@ -1,7 +1,7 @@
 import asyncio
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Header, Footer, Input, Button, Static, TabbedContent, TabPane, Markdown, DirectoryTree, Label
+from textual.widgets import Header, Footer, Input, Button, Static, TabbedContent, TabPane, Markdown, DirectoryTree, Label, Select
 from textual.binding import Binding
 
 from src.ai_agent import AIAgent
@@ -20,8 +20,13 @@ class CoreSearchTab(Container):
         with Vertical():
             with Horizontal(id="search_controls"):
                 yield Input(placeholder="Filepath to search...", id="filepath_input")
-                yield Input(placeholder="Keyword...", id="keyword_input")
-                yield Input(placeholder="Regex...", id="regex_input")
+                yield Select(
+                    [("Smart Search", "smart"), ("Exact Keyword", "keyword"), ("Raw Regex", "regex")],
+                    prompt="Search Type",
+                    id="search_type_select",
+                    value="smart"
+                )
+                yield Input(placeholder="Search Query...", id="query_input")
                 yield Button("Search", id="run_search_button", variant="success")
             yield Container(Static("Search results will appear here.", id="search_results"), id="results_container")
 
@@ -112,7 +117,7 @@ class LogAnalyzerApp(App):
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "chat_input":
             await self.handle_ai_chat()
-        elif event.input.id in ["filepath_input", "keyword_input", "regex_input"]:
+        elif event.input.id in ["filepath_input", "query_input"]:
             await self.handle_core_search()
 
     async def handle_ai_chat(self) -> None:
@@ -152,8 +157,8 @@ class LogAnalyzerApp(App):
 
     async def handle_core_search(self) -> None:
         filepath = self.query_one("#filepath_input", Input).value.strip()
-        keyword = self.query_one("#keyword_input", Input).value.strip()
-        regex = self.query_one("#regex_input", Input).value.strip()
+        query = self.query_one("#query_input", Input).value.strip()
+        search_type = self.query_one("#search_type_select", Select).value
         
         results_widget = self.query_one("#search_results", Static)
         
@@ -164,7 +169,7 @@ class LogAnalyzerApp(App):
         results_widget.update("Searching...")
         
         try:
-            results = await self.log_searcher.search_file(filepath, keyword=keyword if keyword else None, regex=regex if regex else None)
+            results = await self.log_searcher.search_file(filepath, query=query if query else None, search_type=search_type)
             
             if not results:
                 results_widget.update("No matches found.")

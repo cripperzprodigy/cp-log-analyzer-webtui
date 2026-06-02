@@ -7,19 +7,28 @@ class LogSearcher:
         self.chunk_size = chunk_size
         self.vfs = vfs
 
-    async def search_file(self, filepath, keyword=None, regex=None, time_range=None):
+    async def search_file(self, filepath, query=None, search_type="smart", time_range=None):
         """
-        Searches a file for a keyword or regex pattern, returning matching lines.
-        Handles large files by reading asynchronously line-by-line using aiofiles.
+        Searches a file based on a query and search_type ('smart', 'keyword', 'regex').
+        Handles large files by chunked reading via VFS.
         """
         results = []
         pattern = None
         
-        if regex:
-            try:
-                pattern = re.compile(regex)
-            except re.error as e:
-                return [{"error": f"Invalid regex pattern: {e}"}]
+        if query:
+            if search_type == "regex":
+                try:
+                    pattern = re.compile(query)
+                except re.error as e:
+                    return [{"error": f"Invalid regex pattern: {e}"}]
+            elif search_type == "smart":
+                try:
+                    # Smart search: Case-insensitive, escapes special characters except *, allows * as wildcard
+                    escaped_query = re.escape(query).replace(r'\*', '.*')
+                    # Wrap in word boundaries if it looks like a word, but keep it flexible
+                    pattern = re.compile(escaped_query, re.IGNORECASE)
+                except re.error as e:
+                    return [{"error": f"Error building smart pattern: {e}"}]
 
         try:
             # We use vfs to read lines in chunks. 
@@ -38,14 +47,14 @@ class LogSearcher:
                     line_num = current_start + idx
                     match = False
                     
-                    if pattern:
+                    if pattern: # Handles 'regex' and 'smart'
                         if pattern.search(line):
                             match = True
-                    elif keyword:
-                        if keyword in line:
+                    elif query and search_type == "keyword": # Handles exact 'keyword'
+                        if query in line:
                             match = True
-                    else:
-                        match = True
+                    elif not query:
+                        match = True # Return all if no query (useful for small chunks)
 
                     if match:
                         results.append({

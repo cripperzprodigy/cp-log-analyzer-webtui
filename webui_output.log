@@ -1,12 +1,11 @@
-[92m02:48:19 - LiteLLM:WARNING[0m: common_utils.py:979 - litellm: could not pre-load bedrock-runtime response stream shape — Bedrock event-stream decoding will be unavailable. Error: No module named 'botocore'
-[92m02:48:20 - LiteLLM:WARNING[0m: common_utils.py:24 - litellm: could not pre-load sagemaker-runtime response stream shape — SageMaker event-stream decoding will be unavailable. Error: No module named 'botocore'
-INFO:     Started server process [111090]
+[92m06:10:00 - LiteLLM:WARNING[0m: common_utils.py:979 - litellm: could not pre-load bedrock-runtime response stream shape — Bedrock event-stream decoding will be unavailable. Error: No module named 'botocore'
+[92m06:10:00 - LiteLLM:WARNING[0m: common_utils.py:24 - litellm: could not pre-load sagemaker-runtime response stream shape — SageMaker event-stream decoding will be unavailable. Error: No module named 'botocore'
+INFO:     Started server process [131409]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 Starting Web UI on http://127.0.0.1:8000
-INFO:     127.0.0.1:51574 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51574 - "GET /api/directory?path=.%2F HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51580 - "GET /api/vfs/list HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51580 - "POST /api/chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51580 - "POST /api/search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46268 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46268 - "GET /api/directory?path=.%2F HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46272 - "GET /api/vfs/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46272 - "POST /api/search HTTP/1.1" 200 OK
