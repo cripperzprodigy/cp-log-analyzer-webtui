@@ -1,11 +1,13 @@
 import asyncio
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, Vertical, Grid
 from textual.widgets import Header, Footer, Input, Button, Static, TabbedContent, TabPane, Markdown, DirectoryTree, Label, Select
 from textual.binding import Binding
+from textual.screen import ModalScreen
 
 from src.ai_agent import AIAgent
 from src.log_searcher import LogSearcher
+from src.vfs import vfs
 
 class AIChatTab(Container):
     def compose(self) -> ComposeResult:
@@ -14,6 +16,79 @@ class AIChatTab(Container):
             with Horizontal(id="input_container"):
                 yield Input(placeholder="Ask the AI to investigate a folder or log file...", id="chat_input")
                 yield Button("Send", id="send_button", variant="primary")
+
+class AddNetworkDriveScreen(ModalScreen):
+    """A modal screen to add a network drive (SFTP or SMB)."""
+    
+    CSS = """
+    AddNetworkDriveScreen {
+        align: center middle;
+    }
+    
+    #modal_container {
+        width: 60;
+        height: auto;
+        padding: 1 2;
+        background: $surface;
+        border: thick $primary;
+    }
+    
+    #modal_title {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    
+    .form_row {
+        height: 3;
+        margin-bottom: 1;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Container(id="modal_container"):
+            yield Label("Add Network Drive", id="modal_title")
+            yield Input(placeholder="Connection Name (ID) e.g. prod_logs", id="nd_id")
+            yield Select([("SMB (Windows Share)", "smb"), ("SFTP (SSH)", "sftp")], prompt="Protocol", id="nd_proto", value="smb")
+            yield Input(placeholder="Host / IP", id="nd_host")
+            yield Input(placeholder="Share Name (For SMB only)", id="nd_share")
+            yield Input(placeholder="Port (Optional, usually 22 for SFTP)", id="nd_port")
+            yield Input(placeholder="Username (Optional for Guest SMB)", id="nd_user")
+            yield Input(placeholder="Password (Optional)", id="nd_pass", password=True)
+            with Horizontal(classes="form_row"):
+                yield Button("Cancel", id="btn_cancel", variant="error")
+                yield Button("Add Drive", id="btn_add", variant="success")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn_cancel":
+            self.dismiss(None)
+        elif event.button.id == "btn_add":
+            conn_id = self.query_one("#nd_id", Input).value.strip()
+            proto = self.query_one("#nd_proto", Select).value
+            host = self.query_one("#nd_host", Input).value.strip()
+            share = self.query_one("#nd_share", Input).value.strip()
+            port_str = self.query_one("#nd_port", Input).value.strip()
+            user = self.query_one("#nd_user", Input).value.strip()
+            password = self.query_one("#nd_pass", Input).value
+            
+            if not conn_id or not host:
+                return # In a full app, show a toast/error here
+            
+            if proto == "smb" and not share:
+                return 
+
+            config = {
+                "protocol": proto,
+                "host": host,
+                "username": user if user else None,
+                "password": password if password else None,
+                "share_name": share if proto == "smb" else None,
+                "port": int(port_str) if port_str and proto == "sftp" else None
+            }
+            
+            vfs.add_connection(conn_id, config)
+            self.dismiss(conn_id)
+
 
 class CoreSearchTab(Container):
     def compose(self) -> ComposeResult:
@@ -96,6 +171,8 @@ class LogAnalyzerApp(App):
             with Vertical(id="sidebar"):
                 yield Label("Directory Tree", classes="panel_title")
                 yield DirectoryTree("./")
+                yield Label("Network Drives", classes="panel_title", style="margin-top: 1;")
+                yield Static("No drives mapped. Press 'n' to add.", id="vfs_list_display")
                 
             with Vertical(id="main_area"):
                 with TabbedContent(initial="ai_chat"):
@@ -180,16 +257,22 @@ class LogAnalyzerApp(App):
              results_widget.update(f"Error during search: {str(e)}")
 
     async def action_add_network_drive(self) -> None:
-        # Note: A full Textual modal for form inputs is complex for a brief TUI update. 
-        # For simplicity and given the user requested "flexible options", the Web UI is the primary 
-        # intended interface for advanced multi-field setups, while the TUI uses config or simple defaults.
-        # However, to meet the TUI enhancement requirement, we'll log a placeholder message 
-        # that directs them to the Web UI for remote connection management, keeping the TUI lean.
-        self.chat_history_text += f"\n\n[bold yellow]System:[/bold yellow] To add network drives (SMB/SFTP), please launch the Web UI using `--web` or configure them programmatically. This feature is optimized for the Web interface.\n"
-        chat_history_widget = self.query_one("#chat_history", Static)
-        chat_history_widget.update(self.chat_history_text)
-        chat_history_widget.scroll_end()
-        self.query_one("TabbedContent").active = "ai_chat"
+        def check_result(conn_id: str | None) -> None:
+            if conn_id:
+                # Update the sidebar VFS list display
+                vfs_display = self.query_one("#vfs_list_display", Static)
+                connections = list(vfs.connections.keys())
+                if connections:
+                    formatted_list = "\n".join([f"🌐 vfs://{c}" for c in connections])
+                    vfs_display.update(formatted_list)
+                
+                # Let user know in chat
+                self.chat_history_text += f"\n\n[bold green]System:[/bold green] Added network drive: vfs://{conn_id}\n"
+                chat_history_widget = self.query_one("#chat_history", Static)
+                chat_history_widget.update(self.chat_history_text)
+                chat_history_widget.scroll_end()
+
+        self.push_screen(AddNetworkDriveScreen(), check_result)
 
 
 import sys
