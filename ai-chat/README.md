@@ -6,8 +6,10 @@ This directory (`/ai-chat/`) contains context specifically written for you to he
 
 Please read the following documents in order before you begin executing tasks:
 
-1. **`SOP_AND_RULES.md`** - Start here. This outlines your strict operational constraints (e.g., no Node.js, maintain cross-platform parity).
-2. **`ARCHITECTURE.md`** - Read this to understand how the core Python engines (`vfs`, `log_searcher`, `ai_agent`) connect to the dual interfaces (Textual TUI, FastAPI Web UI).
-3. **`PROJECT_HISTORY.md`** - Read this to understand the historical context of decisions (why the Virtual File System exists, why the Web UI is vanilla HTML/JS).
+1. **`chatpad.md`** - Start here. This is our asynchronous communication log. Read the latest entries to see what the team has been working on, and log your own actions when you finish.
+2. **`SOP.md`** - Outlines your strict operational constraints (e.g., no Node.js, maintain cross-platform parity).
+3. **`ARCHITECTURE.md`** - Details how the core Python engines (`vfs`, `log_searcher`, `ai_agent`) connect to the dual interfaces (Textual TUI, FastAPI Web UI).
+4. **`LITELLM_PROVIDERS.md`** - A technical reference for routing the AI backend to local and cloud models.
+5. **`PROJECT_HISTORY.md`** - Historical context of design decisions.
 
 Good luck, and build great things!
