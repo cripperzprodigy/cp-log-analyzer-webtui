@@ -23,32 +23,41 @@ ai:
   # api_key: "" # Not required for Ollama
   
   # ----------------------------------------
-  # 2. Local: LM-Studio / LocalAI
+  # 2. Local: LM-Studio / LocalAI / vLLM
   # ----------------------------------------
-  # model: "openai/local-model" # Use the 'openai/' prefix for generic OpenAI-compatible local servers
-  # api_base: "http://localhost:1234/v1" # Standard port for LM-Studio
-  # api_key: "sk-local" # Usually any string works
+  # model: "openai/<model_name>" # Litellm routes this via the OpenAI spec. Replace <model_name> with your loaded model.
+  # api_base: "http://localhost:1234/v1" # Standard port for LM-Studio. For vLLM, it's typically http://localhost:8000/v1
+  # api_key: "sk-local" # Any string works for most local proxy servers.
   
   # ----------------------------------------
   # 3. Cloud: OpenRouter
   # ----------------------------------------
-  # model: "openrouter/anthropic/claude-3.5-sonnet"
-  # api_base: "" # Leave empty, litellm knows the OpenRouter URL
-  # api_key: "sk-or-v1-..." # Put your OpenRouter key here
+  # model: "openrouter/anthropic/claude-3.5-sonnet" # Must have 'openrouter/' prefix.
+  # api_base: "" # Leave empty, litellm defaults to https://openrouter.ai/api/v1
+  # api_key: "sk-or-v1-..." # Put your OpenRouter key here.
   
   # ----------------------------------------
   # 4. Cloud: OpenAI
   # ----------------------------------------
-  # model: "gpt-4o"
-  # api_base: ""
-  # api_key: "sk-..." # Or set the OPENAI_API_KEY environment variable
+  # model: "gpt-4o" # No prefix needed. To force chat completion, could also be 'openai/gpt-4o'
+  # api_base: "" # Leave empty for standard OpenAI API.
+  # api_key: "sk-proj-..." # Put your OpenAI key here.
   
   # ----------------------------------------
   # 5. Cloud: Anthropic
   # ----------------------------------------
-  # model: "claude-3-5-sonnet-20240620"
-  # api_base: ""
-  # api_key: "sk-ant-..." # Or set the ANTHROPIC_API_KEY environment variable
+  # model: "claude-3-5-sonnet-20241022" # No prefix needed. Litellm routes to Anthropic.
+  # api_base: "" # Leave empty.
+  # api_key: "sk-ant-..." # Put your Anthropic key here.
+
+  # ----------------------------------------
+  # 6. Legacy / Text Completions (Non-Chat)
+  # ----------------------------------------
+  # If you are using an older model that does not support the Chat Completion API 
+  # (i.e., it doesn't take 'messages' with 'roles', but instead a raw prompt string),
+  # use the `text-completion-openai/` prefix:
+  # model: "text-completion-openai/<model_name>"
+  # api_base: "http://localhost:1234/v1"
 
   # --- Generation parameters ---
   temperature: 0.2
