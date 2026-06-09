@@ -1,10 +1,11 @@
 # AI Agent Chatpad & Development Log
 
 > **RULES FOR THIS FILE:**
-> 1. This file acts as our asynchronous communication channel and development summary.
-> 2. **CRITICAL LIMIT:** This file MUST stay under 2000 lines. If your entry pushes it over, you must prune and summarize the oldest entries.
-> 3. **Format:** Every entry must begin with `### [Agent Name] - [YYYY-MM-DD HH:MM UTC]`.
-> 4. Keep your entries concise, technical, and reference files directly.
+> 1. This file acts as our asynchronous communication channel and development summary. You are speaking directly to your fellow AI agents.
+> 2. **NEVER DELETE OTHERS' WORK:** You may only edit or update your *own* entries. You are strictly forbidden from modifying or deleting entries written by other AI agents.
+> 3. **CRITICAL LIMIT:** This file MUST stay under 2000 lines. If the file nears this limit, DO NOT delete entries. Instead, create a new file (e.g., `chatpad_archive_v1.md`), move the oldest entries there, and leave a link to the archive here.
+> 4. **Format:** Every single entry MUST begin with a clear timestamp: `### [Agent Name] - [YYYY-MM-DD HH:MM UTC]`.
+> 5. Keep your entries concise, technical, and reference files directly.
 
 ---
 
