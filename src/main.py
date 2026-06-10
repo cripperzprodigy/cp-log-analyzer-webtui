@@ -1,7 +1,7 @@
 import asyncio
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical, Grid
-from textual.widgets import Header, Footer, Input, Button, Static, TabbedContent, TabPane, Markdown, DirectoryTree, Label, Select
+from textual.widgets import Header, Footer, Input, Button, Static, TabbedContent, TabPane, Markdown, DirectoryTree, Label, Select, DataTable
 from textual.binding import Binding
 from textual.screen import ModalScreen
 
@@ -103,7 +103,9 @@ class CoreSearchTab(Container):
                 )
                 yield Input(placeholder="Search Query...", id="query_input")
                 yield Button("Search", id="run_search_button", variant="success")
-            yield Container(Static("Search results will appear here.", id="search_results"), id="results_container")
+            
+            yield Label("Select a row and press 'Enter' to send to AI", style="color: $text-muted; padding: 1; text-align: center;")
+            yield DataTable(id="search_results_table")
 
 class LogAnalyzerApp(App):
     CSS = """
@@ -156,6 +158,7 @@ class LogAnalyzerApp(App):
         Binding("q", "quit", "Quit"),
         Binding("d", "toggle_dark", "Toggle Dark Mode"),
         Binding("n", "add_network_drive", "Add Network Drive"),
+        Binding("c", "clear_chat", "Clear AI Memory"),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -184,6 +187,12 @@ class LogAnalyzerApp(App):
 
     def on_mount(self) -> None:
         self.title = "Log Searcher & AI Analyzer"
+        
+        # Setup Data Table
+        table = self.query_one("#search_results_table", DataTable)
+        table.add_columns("Line", "Content")
+        table.cursor_type = "row"
+        table.zebra_stripes = True
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "send_button":
@@ -232,29 +241,45 @@ class LogAnalyzerApp(App):
             chat_history_widget.update(self.chat_history_text)
             chat_history_widget.scroll_end()
 
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        # Get content from the 2nd column (index 1) of the selected row
+        table = self.query_one("#search_results_table", DataTable)
+        row_key = event.row_key
+        content = table.get_row(row_key)[1]
+        
+        # Switch to chat tab and populate input
+        self.query_one("TabbedContent").active = "ai_chat"
+        chat_input = self.query_one("#chat_input", Input)
+        chat_input.value = f"Explain this log entry:\n\n{content}"
+        chat_input.focus()
+
     async def handle_core_search(self) -> None:
         filepath = self.query_one("#filepath_input", Input).value.strip()
         query = self.query_one("#query_input", Input).value.strip()
         search_type = self.query_one("#search_type_select", Select).value
         
-        results_widget = self.query_one("#search_results", Static)
+        table = self.query_one("#search_results_table", DataTable)
+        table.clear()
         
         if not filepath:
-            results_widget.update("Error: Please provide a filepath.")
+            table.add_row("Error", "Please provide a filepath.")
             return
             
-        results_widget.update("Searching...")
-        
         try:
             results = await self.log_searcher.search_file(filepath, query=query if query else None, search_type=search_type)
             
             if not results:
-                results_widget.update("No matches found.")
+                table.add_row("Info", "No matches found.")
             else:
-                formatted_results = "\n".join([f"Line {r.get('line_num', '?')}: {r.get('content', r.get('error', r.get('info', '')))}" for r in results])
-                results_widget.update(formatted_results)
+                for r in results:
+                    if "error" in r:
+                        table.add_row("Error", r["error"])
+                    elif "info" in r:
+                        table.add_row("Info", r["info"])
+                    else:
+                        table.add_row(str(r["line_num"]), r["content"])
         except Exception as e:
-             results_widget.update(f"Error during search: {str(e)}")
+            table.add_row("Error", f"Error during search: {str(e)}")
 
     async def action_add_network_drive(self) -> None:
         def check_result(conn_id: str | None) -> None:
@@ -273,6 +298,15 @@ class LogAnalyzerApp(App):
                 chat_history_widget.scroll_end()
 
         self.push_screen(AddNetworkDriveScreen(), check_result)
+
+    async def action_clear_chat(self) -> None:
+        self.messages = []
+        self.chat_history_text = "👋 Memory cleared. AI Investigator initialized. How can I help you?"
+        
+        chat_history_widget = self.query_one("#chat_history", Static)
+        chat_history_widget.update(self.chat_history_text)
+        
+        self.query_one("TabbedContent").active = "ai_chat"
 
 
 import sys
