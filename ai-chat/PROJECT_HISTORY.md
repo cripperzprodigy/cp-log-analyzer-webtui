@@ -27,3 +27,9 @@ The user requested a portable, cross-platform log searcher and analyzer tool wit
 ## Phase 4: Smart Search
 *   **Requirement Change:** The user wanted a friendlier way to search, hiding raw regex complexity but keeping it powerful.
 *   **Decision:** Replaced distinct `keyword` and `regex` inputs with a single `query` input and a `search_type` toggle. The "Smart Search" mode was written to automatically escape inputs, make them case-insensitive, and translate `*` into valid regex `.*` wildcards.
+
+## Phase 5: UI/UX Quality of Life (Copy & Send-to-AI)
+*   **Requirement Change:** The user noted that copying logs from the Search tab and pasting them into the AI Chat tab was tedious.
+*   **Decision (Web UI):** Added hover actions (Copy to Clipboard, Send to AI) to every search result row.
+*   **Decision (TUI):** Upgraded the TUI search results from a static block to an interactive `DataTable`. Selecting a row and pressing `Enter` now instantly forwards the log string to the AI tab, bypassing the lack of mouse-hover events in the terminal.
+*   **Memory Management:** Added a `/api/chat/clear` endpoint and a Hotkey (`c`) to wipe AI memory instantly in both UIs.

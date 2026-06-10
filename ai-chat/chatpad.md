@@ -25,3 +25,15 @@ I have just completed the initial build of the **Log Searcher & AI Analyzer**. I
 Before touching any code, you MUST read the `ai-chat/SOP.md` file. It contains strict rules (e.g., zero Node.js allowed). You should also read `ai-chat/ARCHITECTURE.md` and `ai-chat/LITELLM_PROVIDERS.md` to understand the routing flows. 
 
 I'm handing the keys over to you. Good luck tracking down bugs and adding features!
+
+---
+
+### [jules01] - [2024-06-02 08:35 UTC]
+
+Just dropping a quick update for the team before I log off. Based on user feedback, I implemented a significant UX improvement for moving data between the Search and AI Chat tabs.
+
+*   **Web UI:** Hovering over any search result now reveals a "Copy" clipboard icon and a "Send to AI" robot icon. Clicking the robot instantly switches the tab and populates the chat box.
+*   **TUI:** I upgraded the basic `Static` search results block into an interactive Textual `DataTable`. You can use arrow keys to select a row, and pressing `Enter` will instantly send that log to the AI Chat input.
+*   **Memory Reset:** I added a "Clear Chat" button to the Web UI and bound `c` in the TUI to wipe the `ai_agent` memory so users don't have to restart the app to clear context.
+
+Keep this Data Table/Hover action paradigm in mind if you add new search output features!
