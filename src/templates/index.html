@@ -221,6 +221,12 @@
         }
 
         /* --- AI Chat Pane --- */
+        .chat-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
         #chat-history {
             flex: 1;
             overflow-y: auto;
@@ -229,6 +235,9 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            border: 1px solid var(--border-color);
+            background-color: var(--panel-bg);
+            border-radius: 8px;
         }
 
         /* Chat bubbles */
@@ -345,13 +354,19 @@
         }
         
         .search-line {
-            padding: 4px 8px;
+            padding: 6px 8px;
             border-bottom: 1px solid #1e2130;
             display: flex;
+            align-items: flex-start;
+            position: relative;
         }
         
         .search-line:hover {
             background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .search-line:hover .line-actions {
+            opacity: 1;
         }
 
         .line-num {
@@ -360,13 +375,31 @@
             user-select: none;
             min-width: 50px;
             text-align: right;
+            padding-top: 2px;
         }
 
         .line-content {
             color: #e2e8f0;
             white-space: pre-wrap;
             word-break: break-all;
+            flex: 1;
         }
+
+        .line-actions {
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            margin-left: 10px;
+            padding-top: 2px;
+        }
+
+        .action-icon {
+            cursor: pointer;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .action-icon:hover { color: var(--accent-color); }
 
         .search-error { color: var(--error-color); }
         .search-info { color: #f59e0b; }
@@ -494,6 +527,9 @@
 
         <!-- AI Chat Pane -->
         <div id="pane-chat" class="pane active">
+            <div class="chat-header">
+                <button class="icon-btn" onclick="clearChat()" title="Clear Chat History" style="font-size: 14px; padding: 4px 8px; background: #334155; border-radius: 4px;">🗑️ Clear Memory</button>
+            </div>
             <div id="chat-history">
                 <div class="message-row ai">
                     <div class="message ai">👋 AI Investigator initialized. I have access to your local files and can search logs. How can I help you today?</div>
@@ -747,10 +783,15 @@
                         } else if (r.info) {
                             html += `<div class="search-line search-info">${r.info}</div>`;
                         } else {
+                            const safeContent = escapeHtml(r.content);
                             html += `
                             <div class="search-line">
                                 <span class="line-num">${r.line_num}</span>
-                                <span class="line-content">${escapeHtml(r.content)}</span>
+                                <span class="line-content">${safeContent}</span>
+                                <div class="line-actions">
+                                    <span class="action-icon" title="Copy to Clipboard" onclick="copyToClipboard(this, \`${safeContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`')}\`)">📋</span>
+                                    <span class="action-icon" title="Send to AI" onclick="sendToAI(\`${safeContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`')}\`)">🤖</span>
+                                </div>
                             </div>`;
                         }
                     });
@@ -770,6 +811,37 @@
                  .replace(/>/g, "&gt;")
                  .replace(/"/g, "&quot;")
                  .replace(/'/g, "&#039;");
+        }
+        
+        // UX Actions
+        function copyToClipboard(element, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = element.innerText;
+                element.innerText = "✅";
+                setTimeout(() => element.innerText = original, 1500);
+            }).catch(err => {
+                console.error("Failed to copy: ", err);
+            });
+        }
+        
+        function sendToAI(text) {
+            switchTab('chat');
+            const input = document.getElementById('chat-input');
+            input.value = `Explain this log entry:\n\n${text}`;
+            input.focus();
+        }
+
+        async function clearChat() {
+            try {
+                await fetch('/api/chat/clear', { method: 'POST' });
+                const history = document.getElementById('chat-history');
+                history.innerHTML = `
+                <div class="message-row ai">
+                    <div class="message ai">👋 Memory cleared. AI Investigator initialized. How can I help you today?</div>
+                </div>`;
+            } catch(e) {
+                console.error("Failed to clear chat memory:", e);
+            }
         }
 
         // Mount logic

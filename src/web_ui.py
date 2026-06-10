@@ -48,6 +48,12 @@ async def chat_endpoint(request: ChatRequest):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.post("/api/chat/clear")
+async def clear_chat_endpoint():
+    global chat_history
+    chat_history = []
+    return {"status": "cleared"}
+
 @app.post("/api/search")
 async def search_endpoint(request: SearchRequest):
     try:
