@@ -1,7 +1,20 @@
 import asyncio
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical, Grid
-from textual.widgets import Header, Footer, Input, Button, Static, TabbedContent, TabPane, Markdown, DirectoryTree, Label, Select, DataTable
+from textual.widgets import (
+    Header,
+    Footer,
+    Input,
+    Button,
+    Static,
+    TabbedContent,
+    TabPane,
+    Markdown,
+    DirectoryTree,
+    Label,
+    Select,
+    DataTable,
+)
 from textual.binding import Binding
 from textual.screen import ModalScreen
 
@@ -9,17 +22,28 @@ from src.ai_agent import AIAgent
 from src.log_searcher import LogSearcher
 from src.vfs import vfs
 
+
 class AIChatTab(Container):
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Container(Static("AI Investigator initialized. How can I help you?", id="chat_history"), id="chat_container")
+            yield Container(
+                Static(
+                    "AI Investigator initialized. How can I help you?",
+                    id="chat_history",
+                ),
+                id="chat_container",
+            )
             with Horizontal(id="input_container"):
-                yield Input(placeholder="Ask the AI to investigate a folder or log file...", id="chat_input")
+                yield Input(
+                    placeholder="Ask the AI to investigate a folder or log file...",
+                    id="chat_input",
+                )
                 yield Button("Send", id="send_button", variant="primary")
+
 
 class AddNetworkDriveScreen(ModalScreen):
     """A modal screen to add a network drive (SFTP or SMB)."""
-    
+
     CSS = """
     AddNetworkDriveScreen {
         align: center middle;
@@ -49,10 +73,17 @@ class AddNetworkDriveScreen(ModalScreen):
         with Container(id="modal_container"):
             yield Label("Add Network Drive", id="modal_title")
             yield Input(placeholder="Connection Name (ID) e.g. prod_logs", id="nd_id")
-            yield Select([("SMB (Windows Share)", "smb"), ("SFTP (SSH)", "sftp")], prompt="Protocol", id="nd_proto", value="smb")
+            yield Select(
+                [("SMB (Windows Share)", "smb"), ("SFTP (SSH)", "sftp")],
+                prompt="Protocol",
+                id="nd_proto",
+                value="smb",
+            )
             yield Input(placeholder="Host / IP", id="nd_host")
             yield Input(placeholder="Share Name (For SMB only)", id="nd_share")
-            yield Input(placeholder="Port (Optional, usually 22 for SFTP)", id="nd_port")
+            yield Input(
+                placeholder="Port (Optional, usually 22 for SFTP)", id="nd_port"
+            )
             yield Input(placeholder="Username (Optional for Guest SMB)", id="nd_user")
             yield Input(placeholder="Password (Optional)", id="nd_pass", password=True)
             with Horizontal(classes="form_row"):
@@ -70,12 +101,12 @@ class AddNetworkDriveScreen(ModalScreen):
             port_str = self.query_one("#nd_port", Input).value.strip()
             user = self.query_one("#nd_user", Input).value.strip()
             password = self.query_one("#nd_pass", Input).value
-            
+
             if not conn_id or not host:
-                return # In a full app, show a toast/error here
-            
+                return  # In a full app, show a toast/error here
+
             if proto == "smb" and not share:
-                return 
+                return
 
             config = {
                 "protocol": proto,
@@ -83,9 +114,9 @@ class AddNetworkDriveScreen(ModalScreen):
                 "username": user if user else None,
                 "password": password if password else None,
                 "share_name": share if proto == "smb" else None,
-                "port": int(port_str) if port_str and proto == "sftp" else None
+                "port": int(port_str) if port_str and proto == "sftp" else None,
             }
-            
+
             vfs.add_connection(conn_id, config)
             self.dismiss(conn_id)
 
@@ -96,16 +127,24 @@ class CoreSearchTab(Container):
             with Horizontal(id="search_controls"):
                 yield Input(placeholder="Filepath to search...", id="filepath_input")
                 yield Select(
-                    [("Smart Search", "smart"), ("Exact Keyword", "keyword"), ("Raw Regex", "regex")],
+                    [
+                        ("Smart Search", "smart"),
+                        ("Exact Keyword", "keyword"),
+                        ("Raw Regex", "regex"),
+                    ],
                     prompt="Search Type",
                     id="search_type_select",
-                    value="smart"
+                    value="smart",
                 )
                 yield Input(placeholder="Search Query...", id="query_input")
                 yield Button("Search", id="run_search_button", variant="success")
-            
-            yield Label("Select a row and press 'Enter' to send to AI", style="color: $text-muted; padding: 1; text-align: center;")
+
+            yield Label(
+                "Select a row and press 'Enter' to send to AI",
+                style="color: $text-muted; padding: 1; text-align: center;",
+            )
             yield DataTable(id="search_results_table")
+
 
 class LogAnalyzerApp(App):
     CSS = """
@@ -153,7 +192,7 @@ class LogAnalyzerApp(App):
         overflow-y: scroll;
     }
     """
-    
+
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("d", "toggle_dark", "Toggle Dark Mode"),
@@ -163,8 +202,8 @@ class LogAnalyzerApp(App):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ai_agent = AIAgent()
-        self.log_searcher = LogSearcher()
+        self.log_searcher = LogSearcher(vfs_instance=vfs)
+        self.ai_agent = AIAgent(log_searcher=self.log_searcher)
         self.messages = []
         self.chat_history_text = ""
 
@@ -174,9 +213,13 @@ class LogAnalyzerApp(App):
             with Vertical(id="sidebar"):
                 yield Label("Directory Tree", classes="panel_title")
                 yield DirectoryTree("./")
-                yield Label("Network Drives", classes="panel_title", style="margin-top: 1;")
-                yield Static("No drives mapped. Press 'n' to add.", id="vfs_list_display")
-                
+                yield Label(
+                    "Network Drives", classes="panel_title", style="margin-top: 1;"
+                )
+                yield Static(
+                    "No drives mapped. Press 'n' to add.", id="vfs_list_display"
+                )
+
             with Vertical(id="main_area"):
                 with TabbedContent(initial="ai_chat"):
                     with TabPane("AI Investigation", id="ai_chat"):
@@ -187,7 +230,7 @@ class LogAnalyzerApp(App):
 
     def on_mount(self) -> None:
         self.title = "Log Searcher & AI Analyzer"
-        
+
         # Setup Data Table
         table = self.query_one("#search_results_table", DataTable)
         table.add_columns("Line", "Content")
@@ -211,29 +254,33 @@ class LogAnalyzerApp(App):
         user_text = chat_input.value.strip()
         if not user_text:
             return
-            
+
         chat_input.value = ""
         self.chat_history_text += f"\n\n[bold green]You:[/bold green] {user_text}\n"
-        
+
         chat_history_widget = self.query_one("#chat_history", Static)
         chat_history_widget.update(self.chat_history_text)
         chat_history_widget.scroll_end()
-        
+
         # Add user message to state
         self.messages.append({"role": "user", "content": user_text})
-        
+
         # Call AI Agent (this runs in the event loop, so it's non-blocking for the UI updates but we might want to run it in a worker for very long tasks. For now, await is fine).
         self.chat_history_text += "\n[bold blue]AI is investigating...[/bold blue]\n"
         chat_history_widget.update(self.chat_history_text)
-        
+
         try:
             # Run the chat async
             ai_response, self.messages = await self.ai_agent.chat(self.messages)
-            
+
             # Remove the 'investigating' placeholder
-            self.chat_history_text = self.chat_history_text.replace("\n[bold blue]AI is investigating...[/bold blue]\n", "")
-            
-            self.chat_history_text += f"\n\n[bold purple]AI:[/bold purple] {ai_response}\n"
+            self.chat_history_text = self.chat_history_text.replace(
+                "\n[bold blue]AI is investigating...[/bold blue]\n", ""
+            )
+
+            self.chat_history_text += (
+                f"\n\n[bold purple]AI:[/bold purple] {ai_response}\n"
+            )
             chat_history_widget.update(self.chat_history_text)
             chat_history_widget.scroll_end()
         except Exception as e:
@@ -246,7 +293,7 @@ class LogAnalyzerApp(App):
         table = self.query_one("#search_results_table", DataTable)
         row_key = event.row_key
         content = table.get_row(row_key)[1]
-        
+
         # Switch to chat tab and populate input
         self.query_one("TabbedContent").active = "ai_chat"
         chat_input = self.query_one("#chat_input", Input)
@@ -257,17 +304,19 @@ class LogAnalyzerApp(App):
         filepath = self.query_one("#filepath_input", Input).value.strip()
         query = self.query_one("#query_input", Input).value.strip()
         search_type = self.query_one("#search_type_select", Select).value
-        
+
         table = self.query_one("#search_results_table", DataTable)
         table.clear()
-        
+
         if not filepath:
             table.add_row("Error", "Please provide a filepath.")
             return
-            
+
         try:
-            results = await self.log_searcher.search_file(filepath, query=query if query else None, search_type=search_type)
-            
+            results = await self.log_searcher.search_file(
+                filepath, query=query if query else None, search_type=search_type
+            )
+
             if not results:
                 table.add_row("Info", "No matches found.")
             else:
@@ -290,7 +339,7 @@ class LogAnalyzerApp(App):
                 if connections:
                     formatted_list = "\n".join([f"🌐 vfs://{c}" for c in connections])
                     vfs_display.update(formatted_list)
-                
+
                 # Let user know in chat
                 self.chat_history_text += f"\n\n[bold green]System:[/bold green] Added network drive: vfs://{conn_id}\n"
                 chat_history_widget = self.query_one("#chat_history", Static)
@@ -301,48 +350,54 @@ class LogAnalyzerApp(App):
 
     async def action_clear_chat(self) -> None:
         self.messages = []
-        self.chat_history_text = "👋 Memory cleared. AI Investigator initialized. How can I help you?"
-        
+        self.chat_history_text = (
+            "👋 Memory cleared. AI Investigator initialized. How can I help you?"
+        )
+
         chat_history_widget = self.query_one("#chat_history", Static)
         chat_history_widget.update(self.chat_history_text)
-        
+
         self.query_one("TabbedContent").active = "ai_chat"
 
 
 import sys
 import yaml
 
+
 def load_config(path="config.yaml"):
     try:
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             return yaml.safe_load(f)
     except Exception as e:
         print(f"Warning: Could not load config file: {e}")
         return {}
 
+
 if __name__ == "__main__":
     if "--web" in sys.argv:
         try:
             from src.web_ui import run_web_ui
-            
+
             config = load_config()
             web_config = config.get("web", {})
-            
+
             # Default to config file, but allow command line override
             port = web_config.get("port", 8000)
             host = web_config.get("host", "127.0.0.1")
-            
+
             if "--port" in sys.argv:
                 try:
                     port_idx = sys.argv.index("--port")
                     port = int(sys.argv[port_idx + 1])
                 except (ValueError, IndexError):
                     print(f"Invalid port specified in arguments. Defaulting to {port}.")
-            
+
             run_web_ui(host=host, port=port)
         except ImportError as e:
             print(f"Error loading Web UI: {e}")
-            print("Please ensure you have installed the required web dependencies (fastapi, uvicorn, jinja2, python-multipart).")
+            print(
+                "Please ensure you have installed the required web dependencies (fastapi, uvicorn, jinja2, python-multipart)."
+            )
     else:
         app = LogAnalyzerApp()
         app.run()

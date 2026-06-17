@@ -20,12 +20,13 @@ Before you write a single line of code or begin debugging, you must register you
 *   **Python Purism:** You must **never** introduce Node.js, NPM, React, Vue, or heavy frontend build steps. The Web UI (`src/templates/index.html`) must remain vanilla HTML/CSS/JS served directly via FastAPI/Jinja2.
 *   **Portability First:** Do not rely on OS-specific shell commands where a cross-platform Python library exists. Do not assume the user has root/Administrator privileges.
 *   **Interface Parity:** If you add a feature (e.g., a new search filter, a new VFS protocol), you must implement it in **both** the TUI (`src/main.py`) and the Web UI.
-*   **Centralized Config:** Do not hardcode configuration values (ports, models, timeouts). Read them from `config.yaml`.
-*   **File Sizes:** Keep the application lean. Avoid massive monolithic files; if a module gets too complex, abstract it cleanly (as was done with `vfs.py`).
+*   **Robust Architecture (Owner Override):** While the frontend remains lean, the backend `src/` must adhere to SOLID principles. Use strong typing (PEP 484), detailed docstrings (PEP 257), modularized abstractions (`src/core/`), and proper dependency injection.
+*   **Centralized Config:** Do not hardcode configuration values. All configs must be strongly validated via Pydantic using `config.yaml` as the source.
+*   **Observability:** All complex logic must be instrumented with structured logging (e.g., `structlog`) and API retries (e.g., `tenacity`).
 
 ## 4. Testing SOP
 Before committing any changes, you must execute the following validation steps:
-1.  **Test the Core:** If you modify `vfs` or `log_searcher`, write a quick python test script to ensure local paths still resolve correctly and chunking hasn't broken.
+1.  **Test the Core:** Run the automated `pytest` suite located in `tests/`. Coverage must be maintained.
 2.  **Test the TUI:** Ensure the TUI boots up (`python src/main.py`). Textual apps can be tricky to automate, so read your code carefully to ensure logic flow.
 3.  **Test the Web UI (Playwright):** If you modify `src/templates/index.html` or `src/web_ui.py`, you **MUST** run the FastAPI server in the background and write a Playwright Python script to navigate to `http://localhost:8000`, interact with your new feature, and take a screenshot to verify it visually.
 
