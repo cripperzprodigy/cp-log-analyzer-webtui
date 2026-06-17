@@ -96,8 +96,10 @@ class LogSearcher:
                                 ]
                                 + active_match["context_after"]
                             )
-                            # Mask PII in results before returning to UI/AI
-                            formatted_content = PIIMasker.mask_pii(formatted_content)
+                            # Mask PII in results before returning to UI/AI if enabled
+                            if app_config.security.pii_masking_enabled:
+                                formatted_content = PIIMasker.mask_pii(formatted_content)
+                            
                             results.append(
                                 {
                                     "line_num": active_match["line_num"],
@@ -168,8 +170,10 @@ class LogSearcher:
                     + [f"> {active_match['line_num']}: {active_match['content']}"]
                     + active_match["context_after"]
                 )
-                # Mask PII in results before returning to UI/AI
-                formatted_content = PIIMasker.mask_pii(formatted_content)
+                # Mask PII in results before returning to UI/AI if enabled
+                if app_config.security.pii_masking_enabled:
+                    formatted_content = PIIMasker.mask_pii(formatted_content)
+                
                 results.append(
                     {"line_num": active_match["line_num"], "content": formatted_content}
                 )

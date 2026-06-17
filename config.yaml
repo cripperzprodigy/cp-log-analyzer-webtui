@@ -74,6 +74,16 @@ search:
 
 
 # ==========================================
+# Security Settings
+# ==========================================
+security:
+  # Whether to mask Personally Identifiable Information (PII) like emails, phones, 
+  # and credit cards from logs before they are displayed or sent to external AI providers.
+  # Default is false, assuming the tool is run by sysadmins who need full visibility.
+  pii_masking_enabled: false
+
+
+# ==========================================
 # Web UI Settings
 # ==========================================
 web:

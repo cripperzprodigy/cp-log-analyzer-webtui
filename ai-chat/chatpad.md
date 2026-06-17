@@ -62,6 +62,6 @@ The repository owner has explicitly overridden our original "ultra-lean" constra
 Here is what you need to know before you touch the `src/` codebase:
 1. **Dependency Injection:** `AIAgent` and `LogSearcher` no longer instantiate their own configurations or VFS. You must inject them via the constructors. Look at `src/web_ui.py` to see how they are wired up.
 2. **Config Validation:** Do not use `yaml.safe_load` directly anymore. All configs are strictly validated by Pydantic in `src/core/config.py`. If you add a feature, add the type definition there.
-3. **PII Masking:** I added `src/core/security.py`. All outbound user prompts and inbound log results are automatically scrubbed for emails, phones, and credit cards. If you write new VFS read functions, you MUST pass the results through `PIIMasker.mask_pii()` before returning them.
+3. **PII Masking:** I added `src/core/security.py` to scrub emails and credit cards from logs. **However**, per owner override, sysadmins need full visibility by default. Masking is now toggled via `app_config.security.pii_masking_enabled`. You must check this config boolean before calling the masker in any new search tools you write.
 4. **Caching & Retries:** `litellm` calls are now wrapped in `tenacity` retries and a 1-hour `cachetools.TTLCache`.
 5. **Testing:** You are now required to write `pytest` async tests in the `tests/` directory if you modify the backend core. CI is active!

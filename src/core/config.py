@@ -31,10 +31,18 @@ class WebConfig(BaseModel):
     port: int = Field(default=8000, ge=1, le=65535)
 
 
+class SecurityConfig(BaseModel):
+    pii_masking_enabled: bool = Field(
+        default=False, 
+        description="Whether to mask PII in logs before sending to AI or UI."
+    )
+
+
 class AppConfig(BaseModel):
     ai: AIConfig = Field(default_factory=AIConfig)
     search: SearchConfig = Field(default_factory=SearchConfig)
     web: WebConfig = Field(default_factory=WebConfig)
+    security: SecurityConfig = Field(default_factory=SecurityConfig)
 
 
 def load_config(path: str = "config.yaml") -> AppConfig:

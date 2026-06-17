@@ -192,9 +192,10 @@ class AIAgent:
         if not messages:
             messages = [{"role": "system", "content": self.system_prompt}]
 
-        # Sanitize latest user message for PII
-        if messages and messages[-1]["role"] == "user":
-            messages[-1]["content"] = PIIMasker.mask_pii(messages[-1]["content"])
+        # Sanitize latest user message for PII if enabled
+        if app_config.security.pii_masking_enabled:
+            if messages and messages[-1]["role"] == "user":
+                messages[-1]["content"] = PIIMasker.mask_pii(messages[-1]["content"])
 
         kwargs = {
             "model": self.model,
