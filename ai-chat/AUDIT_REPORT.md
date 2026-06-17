@@ -29,8 +29,9 @@ Following a direct override by the repository owner, the `ai-chat` constraints w
 
 ### PHASE 5: Security Hardening
 *   **Data Privacy (PII Masking):** Created `src/core/security.py` featuring a `PIIMasker`. 
-    *   It intercepts outbound user prompts in the Chat UI and scrubs emails, phone numbers, and credit cards before sending them to third-party APIs.
-    *   It also scrubs inbound log search results before rendering them to the screen or passing them to the AI context window.
+    *   *Adaptation:* Per owner override, sysadmins require full log visibility. Therefore, PII masking is **disabled by default**. It is governed by `app_config.security.pii_masking_enabled`.
+    *   If toggled on, it intercepts outbound user prompts in the Chat UI and scrubs emails, phone numbers, and credit cards before sending them to third-party APIs.
+    *   If toggled on, it also scrubs inbound log search results before rendering them to the screen or passing them to the AI context window.
 *   **Secret Management:** API Keys are managed cleanly via the Pydantic configuration loader which supports environment variables natively.
 
 ### PHASE 6: Comprehensive Testing

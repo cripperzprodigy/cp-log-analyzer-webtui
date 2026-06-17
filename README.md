@@ -6,7 +6,7 @@ A powerful, cross-platform log analysis tool built entirely in Python. It featur
 *   **Dual Interfaces:** Use the lightning-fast Terminal UI (`Textual`) or the polished Web UI (`FastAPI` + Vanilla JS).
 *   **AI Investigator Engine:** Powered by `litellm`. The AI can autonomously browse your directories, read file chunks, and search through logs based on your conversational prompts to find root causes of errors.
 *   **Enterprise-Grade Backend:** Features a robust Python backend including Pydantic configuration validation, exponential API retries (`tenacity`), LRU Caching for LLM responses, and structured logging (`structlog`) with rotation.
-*   **Built-in Data Privacy:** Integrated PII Masker automatically scrubs emails, phone numbers, and credit cards from logs before they hit the UI or the LLM context window.
+*   **Optional Data Privacy:** Integrated PII Masker can be toggled on in `config.yaml` to scrub emails, phone numbers, and credit cards from logs before they hit the UI or external LLMs. (Defaults to off for full sysadmin visibility).
 *   **Remote Network Drives:** Map remote SFTP servers or Windows SMB shares directly into the app (via a Virtual File System) without needing OS-level Admin privileges.
 *   **Smart Search:** Search gigabytes of logs asynchronously. The built-in "Smart Search" automatically handles case-insensitivity and wildcards (`*`), while pure Keyword and Raw Regex options remain available.
 *   **Highly Portable:** Zero Node.js or NPM required. Setup is completely automated via bootstrap scripts.
