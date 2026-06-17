@@ -40,3 +40,12 @@ The user requested a portable, cross-platform log searcher and analyzer tool wit
 *   **Decision (Token Limits):** Reduced the maximum search result return limit from 1000 to 50. Large payload dumps were determined to be a risk to context windows and reasoning quality ("Lost in the Middle"). 
 *   **Decision (Grounding):** Overhauled `system_prompt.txt` to include a strict citation rule. The AI is now required to append `[filepath:line_number]` to all claims, ensuring high determinism and traceability for developers using the tool.
 *   **Decision (Memory):** Rejected complex vector-database long-term memory. Log troubleshooting is highly session-based. The simple Array-based session memory (wiped via the Phase 5 "Clear Chat" button) was determined to be the optimal architecture.
+
+## Phase 7: Comprehensive Architecture & Security Overhaul
+*   **Requirement Change:** The project owner authorized an override of the strict "lean scripts" rule to implement a robust, SOLID-compliant backend architecture, prioritizing observability, testing, and security.
+*   **Decision (Architecture):** The core `src/` modules were refactored to use Dependency Injection. `config.yaml` is now strictly validated on startup using `Pydantic` (`src/core/config.py`).
+*   **Decision (Observability):** Replaced raw prints with `structlog` for structured, JSON-friendly logging. Implemented a `RotatingFileHandler` (10MB limit) to prevent log exhaustion.
+*   **Decision (Resilience):** Wrapped all outbound LLM API calls with the `tenacity` library, enabling exponential backoff and automatic retries for transient network/rate-limit errors.
+*   **Decision (Performance):** Implemented an LRU cache (`cachetools.TTLCache`) for LLM responses. Redundant queries are now cached for 1 hour to save API costs and reduce latency.
+*   **Decision (Security):** Implemented a `PIIMasker` (`src/core/security.py`). It actively intercepts outbound user chat prompts and inbound log search results, masking emails, phone numbers, and credit cards before they hit the LLM context window or the UI.
+*   **Decision (Testing & CI):** Created a `tests/` directory with `pytest-asyncio`. Established a `.github/workflows/ci.yml` pipeline and expanded `.pre-commit-config.yaml` to enforce `black`, `mypy`, `flake8`, `isort`, and `bandit`.

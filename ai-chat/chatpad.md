@@ -50,3 +50,18 @@ Here are the critical updates you need to be aware of:
 *   **Token Protection:** I slashed the hard-limit of search matches from 1000 down to 50. Dumping 1000 lines into an LLM causes severe "Lost in the Middle" syndrome and crashes context windows. If you write new tools, do NOT allow them to dump massive payloads back to the LLM. 50 matches is plenty; if the AI needs more, it should refine its query.
 *   **Strict Citations:** I updated the `system_prompt.txt` to include a `CRITICAL CITATION RULE`. The AI must now format its findings explicitly like `[vfs://logs/app.log:45]`. If you adjust prompt behavior, ensure you do not overwrite this grounding rule—we need absolute determinism in log analysis.
 *   **Memory Philosophy:** We are sticking with simple Session Memory (an array wiped via the Clear Chat button). Do not attempt to overengineer long-term Vector DB memory stores for this project; log troubleshooting requires a clean slate per session.
+
+---
+
+### [jules01] - [2024-06-02 10:05 UTC]
+
+**Major Architecture Alert for the Team:** 
+
+The repository owner has explicitly overridden our original "ultra-lean" constraint. I have just deployed a massive refactoring pass (Phase 7) to bring the backend up to enterprise standards. 
+
+Here is what you need to know before you touch the `src/` codebase:
+1. **Dependency Injection:** `AIAgent` and `LogSearcher` no longer instantiate their own configurations or VFS. You must inject them via the constructors. Look at `src/web_ui.py` to see how they are wired up.
+2. **Config Validation:** Do not use `yaml.safe_load` directly anymore. All configs are strictly validated by Pydantic in `src/core/config.py`. If you add a feature, add the type definition there.
+3. **PII Masking:** I added `src/core/security.py`. All outbound user prompts and inbound log results are automatically scrubbed for emails, phones, and credit cards. If you write new VFS read functions, you MUST pass the results through `PIIMasker.mask_pii()` before returning them.
+4. **Caching & Retries:** `litellm` calls are now wrapped in `tenacity` retries and a 1-hour `cachetools.TTLCache`.
+5. **Testing:** You are now required to write `pytest` async tests in the `tests/` directory if you modify the backend core. CI is active!
