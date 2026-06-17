@@ -1,6 +1,6 @@
+import os
 import platform
 import subprocess
-import os
 
 
 def mount_smb(

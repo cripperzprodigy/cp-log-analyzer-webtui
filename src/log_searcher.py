@@ -1,9 +1,10 @@
 import re
-from typing import List, Dict, Any, Optional
-from src.vfs import VirtualFileSystem
+from typing import Any, Dict, List, Optional
 
-from src.core.logger import logger
 from src.core.config import config as app_config
+from src.core.logger import logger
+from src.core.security import PIIMasker
+from src.vfs import VirtualFileSystem
 
 
 class LogSearcher:
@@ -95,6 +96,8 @@ class LogSearcher:
                                 ]
                                 + active_match["context_after"]
                             )
+                            # Mask PII in results before returning to UI/AI
+                            formatted_content = PIIMasker.mask_pii(formatted_content)
                             results.append(
                                 {
                                     "line_num": active_match["line_num"],
@@ -165,6 +168,8 @@ class LogSearcher:
                     + [f"> {active_match['line_num']}: {active_match['content']}"]
                     + active_match["context_after"]
                 )
+                # Mask PII in results before returning to UI/AI
+                formatted_content = PIIMasker.mask_pii(formatted_content)
                 results.append(
                     {"line_num": active_match["line_num"], "content": formatted_content}
                 )

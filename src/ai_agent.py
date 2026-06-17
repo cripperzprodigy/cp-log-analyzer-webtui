@@ -1,16 +1,16 @@
+import hashlib
 import json
-import litellm
-from typing import List, Dict, Any, Tuple
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
+from typing import Any, Dict, List, Tuple
 
-from src.core.logger import logger
-from src.core.exceptions import AIProviderError
+import litellm
+from cachetools import TTLCache
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_exponential)
+
 from src.core.config import config as app_config
+from src.core.exceptions import AIProviderError
+from src.core.logger import logger
+from src.core.security import PIIMasker
 from src.log_searcher import LogSearcher
 
 
@@ -31,6 +31,9 @@ class AIAgent:
         self.api_base = app_config.ai.api_base
         self.api_key = app_config.ai.api_key
         self.temperature = app_config.ai.temperature
+
+        # LRU Cache for AI responses to save tokens and time (1 hour TTL)
+        self.cache = TTLCache(maxsize=1000, ttl=3600)
 
         # Define the tools available to the AI
         self.tools = [
@@ -144,15 +147,28 @@ class AIAgent:
             logger.error("tool_execution_failed", tool_name=name, error=str(e))
             return f"Error executing tool {name}: {str(e)}"
 
+    def _cache_key(self, kwargs: dict) -> str:
+        """Generates a stable cache key for an LLM request."""
+        # We only cache the messages to avoid hashing function pointers
+        msgs = json.dumps(kwargs.get("messages", []))
+        return hashlib.sha256(msgs.encode()).hexdigest()
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception),
     )
     async def _call_litellm(self, kwargs: dict) -> Any:
-        """Wraps litellm.acompletion with exponential backoff retries."""
+        """Wraps litellm.acompletion with exponential backoff retries and LRU caching."""
+        key = self._cache_key(kwargs)
+        if key in self.cache:
+            logger.debug("litellm_cache_hit", key=key)
+            return self.cache[key]
+
         logger.debug("calling_litellm", model=kwargs.get("model"))
-        return await litellm.acompletion(**kwargs)
+        response = await litellm.acompletion(**kwargs)
+        self.cache[key] = response
+        return response
 
     async def chat(
         self, messages: List[Dict[str, Any]]
@@ -175,6 +191,10 @@ class AIAgent:
 
         if not messages:
             messages = [{"role": "system", "content": self.system_prompt}]
+
+        # Sanitize latest user message for PII
+        if messages and messages[-1]["role"] == "user":
+            messages[-1]["content"] = PIIMasker.mask_pii(messages[-1]["content"])
 
         kwargs = {
             "model": self.model,

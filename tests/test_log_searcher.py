@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from src.log_searcher import LogSearcher
-from src.vfs import VirtualFileSystem, VFSNode
+from src.vfs import VFSNode, VirtualFileSystem
 
 
 @pytest.fixture

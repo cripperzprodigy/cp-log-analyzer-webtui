@@ -1,22 +1,12 @@
 import asyncio
+
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical, Grid
-from textual.widgets import (
-    Header,
-    Footer,
-    Input,
-    Button,
-    Static,
-    TabbedContent,
-    TabPane,
-    Markdown,
-    DirectoryTree,
-    Label,
-    Select,
-    DataTable,
-)
 from textual.binding import Binding
+from textual.containers import Container, Grid, Horizontal, Vertical
 from textual.screen import ModalScreen
+from textual.widgets import (Button, DataTable, DirectoryTree, Footer, Header,
+                             Input, Label, Markdown, Select, Static,
+                             TabbedContent, TabPane)
 
 from src.ai_agent import AIAgent
 from src.log_searcher import LogSearcher
@@ -361,6 +351,7 @@ class LogAnalyzerApp(App):
 
 
 import sys
+
 import yaml
 
 

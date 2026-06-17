@@ -1,16 +1,17 @@
-from fastapi import FastAPI, Request, Form
+import os
+from typing import Optional
+
+import uvicorn
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import os
-import uvicorn
 from pydantic import BaseModel
-from typing import Optional
 
 from src.ai_agent import AIAgent
 from src.log_searcher import LogSearcher
-from src.vfs import vfs
 from src.os_mount import mount_smb, unmount
+from src.vfs import vfs
 
 app = FastAPI(title="Log Searcher & AI Analyzer Web UI")
 

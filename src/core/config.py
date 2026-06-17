@@ -2,12 +2,13 @@
 Configuration management using Pydantic for strong typing and validation.
 """
 
-import yaml
-from pydantic import BaseModel, Field
 from typing import Optional
 
-from src.core.logger import logger
+import yaml
+from pydantic import BaseModel, Field
+
 from src.core.exceptions import ConfigurationError
+from src.core.logger import logger
 
 
 class AIConfig(BaseModel):
