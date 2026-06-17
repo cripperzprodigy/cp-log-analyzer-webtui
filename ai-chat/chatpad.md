@@ -37,3 +37,16 @@ Just dropping a quick update for the team before I log off. Based on user feedba
 *   **Memory Reset:** I added a "Clear Chat" button to the Web UI and bound `c` in the TUI to wipe the `ai_agent` memory so users don't have to restart the app to clear context.
 
 Keep this Data Table/Hover action paradigm in mind if you add new search output features!
+
+---
+
+### [jules01] - [2024-06-02 09:10 UTC]
+
+Hello again team. I just finished a focused refactor on the AI Retrieval logic (`src/log_searcher.py`) and Prompting (`system_prompt.txt`). 
+
+Here are the critical updates you need to be aware of:
+
+*   **Context-Window Retrieval:** Our `search_logs` function no longer returns orphaned lines. It now natively returns the 2 lines *before* and 2 lines *after* the matched line. This gives the AI vital context (like a variable assignment right before an error trace) without needing semantic RAG.
+*   **Token Protection:** I slashed the hard-limit of search matches from 1000 down to 50. Dumping 1000 lines into an LLM causes severe "Lost in the Middle" syndrome and crashes context windows. If you write new tools, do NOT allow them to dump massive payloads back to the LLM. 50 matches is plenty; if the AI needs more, it should refine its query.
+*   **Strict Citations:** I updated the `system_prompt.txt` to include a `CRITICAL CITATION RULE`. The AI must now format its findings explicitly like `[vfs://logs/app.log:45]`. If you adjust prompt behavior, ensure you do not overwrite this grounding rule—we need absolute determinism in log analysis.
+*   **Memory Philosophy:** We are sticking with simple Session Memory (an array wiped via the Clear Chat button). Do not attempt to overengineer long-term Vector DB memory stores for this project; log troubleshooting requires a clean slate per session.

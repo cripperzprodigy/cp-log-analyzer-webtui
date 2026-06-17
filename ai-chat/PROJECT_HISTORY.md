@@ -33,3 +33,10 @@ The user requested a portable, cross-platform log searcher and analyzer tool wit
 *   **Decision (Web UI):** Added hover actions (Copy to Clipboard, Send to AI) to every search result row.
 *   **Decision (TUI):** Upgraded the TUI search results from a static block to an interactive `DataTable`. Selecting a row and pressing `Enter` now instantly forwards the log string to the AI tab, bypassing the lack of mouse-hover events in the terminal.
 *   **Memory Management:** Added a `/api/chat/clear` endpoint and a Hotkey (`c`) to wipe AI memory instantly in both UIs.
+
+## Phase 6: AI Retrieval & Grounding Enhancements
+*   **Requirement Change:** The user requested an evaluation of the AI architecture, specifically regarding RAG (Retrieval-Augmented Generation), Memory, and general capabilities.
+*   **Decision (RAG):** Rejected traditional Vector/Semantic RAG. Logs are highly structured (TraceIDs, exact timestamps); vector embeddings perform poorly on exact alphanumeric string matching. Instead, upgraded the existing keyword/regex tools to use **Context-Window Retrieval** (returning the 2 lines before and 2 lines after a match) to give the AI necessary state context without leaving the exact-match paradigm.
+*   **Decision (Token Limits):** Reduced the maximum search result return limit from 1000 to 50. Large payload dumps were determined to be a risk to context windows and reasoning quality ("Lost in the Middle"). 
+*   **Decision (Grounding):** Overhauled `system_prompt.txt` to include a strict citation rule. The AI is now required to append `[filepath:line_number]` to all claims, ensuring high determinism and traceability for developers using the tool.
+*   **Decision (Memory):** Rejected complex vector-database long-term memory. Log troubleshooting is highly session-based. The simple Array-based session memory (wiped via the Phase 5 "Clear Chat" button) was determined to be the optimal architecture.
